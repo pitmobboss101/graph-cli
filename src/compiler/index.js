@@ -1,4 +1,3 @@
-const asc = require('assemblyscript/cli/asc')
 const chalk = require('chalk')
 const crypto = require('crypto')
 const fs = require('fs-extra')
@@ -7,11 +6,12 @@ const path = require('path')
 const yaml = require('js-yaml')
 const toolbox = require('gluegun/toolbox')
 
-const { step, withSpinner } = require('./command-helpers/spinner')
-const Subgraph = require('./subgraph')
-const Watcher = require('./watcher')
-const ABI = require('./abi')
-const { applyMigrations } = require('./migrations')
+const { step, withSpinner } = require('../command-helpers/spinner')
+const Subgraph = require('../subgraph')
+const Watcher = require('../watcher')
+const ABI = require('../abi')
+const { applyMigrations } = require('../migrations')
+const asc = require('./asc')
 
 class Compiler {
   constructor(options) {
@@ -200,6 +200,8 @@ class Compiler {
         // Cache compiled files so identical input files are only compiled once
         let compiledFiles = new Map()
 
+        await asc.ready()
+
         subgraph = subgraph.update('dataSources', dataSources =>
           dataSources.map(dataSource =>
             dataSource.updateIn(['mapping', 'file'], mappingPath =>
@@ -280,7 +282,7 @@ class Compiler {
       let libs = this.libsDirs.join(',')
       let global = path.relative(baseDir, this.globalsFile)
 
-      asc.main(
+      let compilerArgs = 
         [
           '--explicitStart',
           '--exportRuntime',
@@ -296,17 +298,15 @@ class Compiler {
           outputFile,
           '--optimize',
           '--debug',
-        ],
-        {
-          stdout: process.stdout,
-          stderr: process.stdout,
-        },
-        e => {
-          if (e != null) {
-            throw e
-          }
-        },
-      )
+        ];
+
+      asc.compile({
+        inputFile,
+        global,
+        baseDir,
+        libs,
+        outputFile,
+      })
 
       // Remember the output file to avoid compiling the same file again
       compiledFiles.set(inputCacheKey, outFile)
@@ -366,7 +366,7 @@ class Compiler {
       let libs = this.libsDirs.join(',')
       let global = path.relative(baseDir, this.globalsFile)
 
-      asc.main(
+      let compilerArgs = 
         [
           '--explicitStart',
           '--exportRuntime',
@@ -382,17 +382,15 @@ class Compiler {
           outputFile,
           '--optimize',
           '--debug',
-        ],
-        {
-          stdout: process.stdout,
-          stderr: process.stdout,
-        },
-        e => {
-          if (e != null) {
-            throw e
-          }
-        },
-      )
+        ];
+
+      asc.compile({
+        inputFile,
+        global,
+        baseDir,
+        libs,
+        outputFile,
+      })
 
       // Remember the output file to avoid compiling the same file again
       compiledFiles.set(inputCacheKey, outFile)
