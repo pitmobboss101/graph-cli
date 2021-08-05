@@ -1,5 +1,6 @@
 const URL = require('url').URL
 const chalk = require('chalk')
+const path = require('path')
 
 const { identifyAccessToken } = require('../command-helpers/auth')
 const { createCompiler } = require('../command-helpers/compiler')
@@ -8,6 +9,7 @@ const { createJsonRpcClient } = require('../command-helpers/jsonrpc')
 const { validateNodeUrl } = require('../command-helpers/node')
 const { withSpinner } = require('../command-helpers/spinner')
 const { validateSubgraphName } = require('../command-helpers/subgraph')
+const { assertManifestApiVersion, assertGraphTsVersion } = require('../command-helpers/version')
 
 const HELP = `
 ${chalk.bold('graph deploy')} [options] ${chalk.bold('<subgraph-name>')} ${chalk.bold(
@@ -108,6 +110,21 @@ module.exports = {
     if (!ipfs) {
       print.error(`No IPFS node provided`)
       print.info(HELP)
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      // Checks to make sure deploy doesn't run against
+      // older subgraphs (both apiVersion and graph-ts version).
+      //
+      // We don't want the deploy to run without these conditions
+      // because that would mean the CLI would try to compile code
+      // using the wrong AssemblyScript compiler.
+      await assertManifestApiVersion(manifest, '0.0.5')
+      await assertGraphTsVersion(path.dirname(manifest), '0.21.0')
+    } catch (e) {
+      print.error(e.message)
       process.exitCode = 1
       return
     }
