@@ -65,7 +65,7 @@ dataSources:
       abi: ${contractName}
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.2
+      apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
         ${abiEvents(abi)
